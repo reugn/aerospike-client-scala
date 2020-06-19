@@ -1,4 +1,6 @@
 # aerospike-client-scala
+[![Build Status](https://travis-ci.com/reugn/aerospike-client-scala.svg?branch=master)](https://travis-ci.com/reugn/aerospike-client-scala)
+
 Idiomatic and reactive Scala client for [Aerospike](https://www.aerospike.com/) database.
 
 ## Modules
