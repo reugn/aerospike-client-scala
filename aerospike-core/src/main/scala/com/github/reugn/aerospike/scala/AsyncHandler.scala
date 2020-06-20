@@ -43,7 +43,7 @@ trait AsyncHandler[F[_]] {
   def delete(key: Key)(implicit policy: WritePolicy = null): F[Boolean]
 
   def truncate(ns: String, set: String, beforeLastUpdate: Option[Calendar] = None)
-              (implicit policy: InfoPolicy = null)
+              (implicit policy: InfoPolicy = null): F[Unit]
 
   //-------------------------------------------------------
   // Touch Operations

@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: ExecutionContext)
   extends AsyncHandler[Future]
-    with StreamHandler[Source] {
+    with StreamHandler2[Source] {
 
   override def put(key: Key, bins: Bin*)(implicit policy: WritePolicy): Future[Unit] = {
     Future(client.put(policy, key, bins: _*))
@@ -38,7 +38,7 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
   }
 
   override def truncate(ns: String, set: String, beforeLastUpdate: Option[Calendar] = None)
-                       (implicit policy: InfoPolicy): Unit = {
+                       (implicit policy: InfoPolicy): Future[Unit] = {
     Future(client.truncate(policy, ns, set, beforeLastUpdate.orNull))
   }
 
@@ -51,7 +51,7 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
   }
 
   override def existsBatch(keys: Seq[Key])(implicit policy: BatchPolicy): Future[Seq[Boolean]] = {
-    Future(client.exists(policy, keys.toArray))
+    Future(client.exists(policy, keys.toArray)).map(_.toIndexedSeq)
   }
 
   override def get(key: Key, binNames: String*)(implicit policy: Policy): Future[Record] = {
@@ -74,12 +74,12 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
       else
         client.get(policy, keys.toArray)
     } map {
-      _.toSeq
+      _.toIndexedSeq
     }
   }
 
   override def getHeaderBatch(keys: Seq[Key])(implicit policy: BatchPolicy): Future[Seq[Record]] = {
-    Future(client.getHeader(policy, keys.toArray))
+    Future(client.getHeader(policy, keys.toArray)).map(_.toIndexedSeq)
   }
 
   override def operate(key: Key, operations: Operation*)(implicit policy: WritePolicy): Future[Record] = {

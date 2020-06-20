@@ -80,7 +80,7 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
   }
 
   it should "records to be exist" in {
-    client.existsBatch(keys) map {
+    client.existsBatch(keys.toIndexedSeq) map {
       result =>
         result.forall(identity) shouldBe true
     }
@@ -112,7 +112,6 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
   }
 
   it should "scan all properly" in {
-    Thread.sleep(1000)
     client.scanAll(namespace, set).runWith(Sink.seq[KeyRecord]) map {
       _.length shouldBe numberOfKeys
     }
