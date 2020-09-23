@@ -5,28 +5,28 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import com.aerospike.client.query.KeyRecord
 import com.aerospike.client.{Bin, Operation}
-import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfter, FutureOutcome}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers with BeforeAndAfter {
 
   private implicit val actorSystem: ActorSystem = ActorSystem("test")
   private implicit val materializer: Materializer = Materializer(actorSystem)
 
+  implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
   private val client: AerospikeHandler = AerospikeHandler(hostname, port)
 
+  override def withFixture(test: NoArgAsyncTest) = new FutureOutcome(for {
+    _ <- Future.sequence(populateKeys(client))
+    result <- super.withFixture(test).toFuture
+    _ <- Future.sequence(deleteKeys(client))
+  } yield result)
+
   behavior of "AerospikeHandler"
-
-  before {
-    Future.sequence(populateKeys(client))
-  }
-
-  after {
-    //Future.sequence(deleteKeys(client))
-  }
 
   it should "get record properly" in {
     client.get(keys(0)) map {
