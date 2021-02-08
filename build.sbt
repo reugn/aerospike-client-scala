@@ -1,16 +1,18 @@
 val ZIOVersion = "1.0.3"
 val MonixVersion = "3.3.0"
-val AerospikeVersion = "5.0.1"
+val AerospikeVersion = "5.0.4"
+val AkkaStreamVersion = "2.6.12"
+val NettyVersion = "4.1.58.Final"
 
 lazy val commonSettings = Seq(
   organization := "com.github.reugn",
-  scalaVersion := "2.12.12",
+  scalaVersion := "2.12.13",
   crossScalaVersions := Seq(scalaVersion.value, "2.13.4"),
 
   libraryDependencies ++= Seq(
     "com.aerospike" % "aerospike-client" % AerospikeVersion,
-    "com.typesafe.akka" %% "akka-stream" % "2.6.10",
-    "io.netty" % "netty-all" % "4.1.54.Final",
+    "com.typesafe.akka" %% "akka-stream" % AkkaStreamVersion,
+    "io.netty" % "netty-all" % NettyVersion,
     "com.typesafe" % "config" % "1.4.1",
     "org.scalatest" %% "scalatest" % "3.2.3" % Test
   ),
