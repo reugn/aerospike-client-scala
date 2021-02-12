@@ -98,7 +98,7 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
   override def scanAll(ns: String, set: String, binNames: String*)
                       (implicit policy: ScanPolicy): Source[KeyRecord, NotUsed] = {
     val listener = new ScanRecordSequenceListener
-    client.scanAll(client.getCluster.eventLoops.next(), listener, policy, ns, set)
+    client.scanAll(null, listener, policy, ns, set)
     Source.fromGraph(new KeyRecordSource(listener.getRecordSet.iterator))
   }
 
@@ -123,7 +123,7 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
   override def scanPartitions(filter: PartitionFilter, ns: String, set: String, binNames: String*)
                              (implicit policy: ScanPolicy): Source[KeyRecord, NotUsed] = {
     val listener = new ScanRecordSequenceListener
-    client.scanPartitions(client.getCluster.eventLoops.next(), listener, policy, filter, ns, set)
+    client.scanPartitions(null, listener, policy, filter, ns, set)
     Source.fromGraph(new KeyRecordSource(listener.getRecordSet.iterator))
   }
 }
@@ -139,8 +139,11 @@ object AerospikeHandler {
     new AerospikeHandler(AerospikeClientBuilder(config).build())
 
   def apply(hostname: String, port: Int)(implicit ec: ExecutionContext): AerospikeHandler =
-    this (new ClientPolicy(), hostname, port)
+    apply(new ClientPolicy(), hostname, port)
 
   def apply(policy: ClientPolicy, hostname: String, port: Int)(implicit ec: ExecutionContext): AerospikeHandler =
     new AerospikeHandler(new AerospikeClient(policy.withEventLoops(), hostname, port))
+
+  def apply(policy: ClientPolicy, hosts: Seq[Host])(implicit ec: ExecutionContext): AerospikeHandler =
+    new AerospikeHandler(new AerospikeClient(policy.withEventLoops(), hosts: _*))
 }
