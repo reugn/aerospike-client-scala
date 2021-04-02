@@ -115,14 +115,14 @@ class ZioAerospikeHandler(protected val client: AerospikeClient)
   override def scanAll(ns: String, set: String, binNames: String*)
                       (implicit policy: ScanPolicy): ZStream[Any, Throwable, KeyRecord] = {
     val listener = new ScanRecordSequenceListener
-    client.scanAll(client.getCluster.eventLoops.get(0), listener, policy, ns, set)
+    client.scanAll(null, listener, policy, ns, set)
     ZStream.fromIterator(listener.getRecordSet.iterator)
   }
 
   override def scanPartitions(filter: PartitionFilter, ns: String, set: String, binNames: String*)
                              (implicit policy: ScanPolicy): ZStream[Any, Throwable, KeyRecord] = {
     val listener = new ScanRecordSequenceListener
-    client.scanPartitions(client.getCluster.eventLoops.get(0), listener, policy, filter, ns, set)
+    client.scanPartitions(null, listener, policy, filter, ns, set)
     ZStream.fromIterator(listener.getRecordSet.iterator)
   }
 }
@@ -138,8 +138,11 @@ object ZioAerospikeHandler {
     new ZioAerospikeHandler(AerospikeClientBuilder(config).build())
 
   def apply(hostname: String, port: Int): ZioAerospikeHandler =
-    this (new ClientPolicy(), hostname, port)
+    apply(new ClientPolicy(), hostname, port)
 
   def apply(policy: ClientPolicy, hostname: String, port: Int): ZioAerospikeHandler =
     new ZioAerospikeHandler(new AerospikeClient(policy.withEventLoops(), hostname, port))
+
+  def apply(policy: ClientPolicy, hosts: Seq[Host]): ZioAerospikeHandler =
+    new ZioAerospikeHandler(new AerospikeClient(policy.withEventLoops(), hosts: _*))
 }

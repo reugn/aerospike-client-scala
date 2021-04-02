@@ -115,14 +115,14 @@ class MonixAerospikeHandler(protected val client: AerospikeClient)
   override def scanAll(ns: String, set: String, binNames: String*)
                       (implicit policy: ScanPolicy): Observable[KeyRecord] = {
     val listener = new ScanRecordSequenceListener
-    client.scanAll(client.getCluster.eventLoops.get(0), listener, policy, ns, set)
+    client.scanAll(null, listener, policy, ns, set)
     Observable.fromIterator(Task(listener.getRecordSet.iterator))
   }
 
   override def scanPartitions(filter: PartitionFilter, ns: String, set: String, binNames: String*)
                              (implicit policy: ScanPolicy): Observable[KeyRecord] = {
     val listener = new ScanRecordSequenceListener
-    client.scanPartitions(client.getCluster.eventLoops.get(0), listener, policy, filter, ns, set)
+    client.scanPartitions(null, listener, policy, filter, ns, set)
     Observable.fromIterator(Task(listener.getRecordSet.iterator))
   }
 }
@@ -138,8 +138,11 @@ object MonixAerospikeHandler {
     new MonixAerospikeHandler(AerospikeClientBuilder(config).build())
 
   def apply(hostname: String, port: Int): MonixAerospikeHandler =
-    this (new ClientPolicy(), hostname, port)
+    apply(new ClientPolicy(), hostname, port)
 
   def apply(policy: ClientPolicy, hostname: String, port: Int): MonixAerospikeHandler =
     new MonixAerospikeHandler(new AerospikeClient(policy.withEventLoops(), hostname, port))
+
+  def apply(policy: ClientPolicy, hosts: Seq[Host]): MonixAerospikeHandler =
+    new MonixAerospikeHandler(new AerospikeClient(policy.withEventLoops(), hosts: _*))
 }

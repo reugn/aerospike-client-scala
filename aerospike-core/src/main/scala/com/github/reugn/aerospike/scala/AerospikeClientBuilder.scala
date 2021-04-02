@@ -1,7 +1,7 @@
 package com.github.reugn.aerospike.scala
 
-import com.aerospike.client.AerospikeClient
-import com.aerospike.client.policy.ClientPolicy
+import com.aerospike.client.policy.{AuthMode, ClientPolicy}
+import com.aerospike.client.{AerospikeClient, Host}
 import com.github.reugn.aerospike.scala.AerospikeClientBuilder._
 import com.github.reugn.aerospike.scala.Policies.ClientPolicyImplicits._
 import com.typesafe.config.Config
@@ -13,6 +13,8 @@ class AerospikeClientBuilder(config: Config) {
     Option(config.getString("aerospike.clientpolicy.user")).foreach(policy.user = _)
     Option(config.getString("aerospike.clientpolicy.password")).foreach(policy.password = _)
     Option(config.getString("aerospike.clientpolicy.clusterName")).foreach(policy.clusterName = _)
+    Option(config.getString("aerospike.clientpolicy.authMode"))
+      .foreach(mode => policy.authMode = AuthMode.valueOf(mode.toUpperCase))
     Option(config.getInt("aerospike.clientpolicy.timeout")).foreach(policy.timeout = _)
     Option(config.getInt("aerospike.clientpolicy.loginTimeout")).foreach(policy.loginTimeout = _)
     Option(config.getInt("aerospike.clientpolicy.minConnsPerNode")).foreach(policy.minConnsPerNode = _)
@@ -31,9 +33,14 @@ class AerospikeClientBuilder(config: Config) {
   }
 
   def build(): AerospikeClient = {
-    val hostname = Option(config.getString("aerospike.hostname")).getOrElse(defaultHostName)
-    val port = Option(config.getInt("aerospike.port")).getOrElse(defaultPort)
-    new AerospikeClient(buildClientPolicy(), hostname, port)
+    Option(config.getString("aerospike.hostList")) map {
+      hostList =>
+        new AerospikeClient(buildClientPolicy(), Host.parseHosts(hostList, defaultPort): _*)
+    } getOrElse {
+      val hostname = Option(config.getString("aerospike.hostname")).getOrElse(defaultHostName)
+      val port = Option(config.getInt("aerospike.port")).getOrElse(defaultPort)
+      new AerospikeClient(buildClientPolicy(), hostname, port)
+    }
   }
 }
 
