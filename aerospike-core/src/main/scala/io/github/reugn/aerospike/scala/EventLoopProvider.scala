@@ -8,7 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup
 
 object EventLoopProvider {
 
-  private lazy val nThreads: Int = Math.ceil(Runtime.getRuntime.availableProcessors / 2.0).toInt
+  private lazy val nThreads: Int = Runtime.getRuntime.availableProcessors
 
   private[scala] lazy val eventLoops: EventLoops = {
     val eventLoopGroup = OperatingSystem() match {
