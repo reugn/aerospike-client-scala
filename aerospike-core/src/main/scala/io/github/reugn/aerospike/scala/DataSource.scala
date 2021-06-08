@@ -1,4 +1,4 @@
-package com.github.reugn.aerospike.scala
+package io.github.reugn.aerospike.scala
 
 import akka.stream.SourceShape
 import akka.stream.stage.GraphStage
