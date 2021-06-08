@@ -5,7 +5,7 @@ val AkkaStreamVersion = "2.6.12"
 val NettyVersion = "4.1.58.Final"
 
 lazy val commonSettings = Seq(
-  organization := "com.github.reugn",
+  organization := "io.github.reugn",
   scalaVersion := "2.12.13",
   crossScalaVersions := Seq(scalaVersion.value, "2.13.4"),
 
@@ -16,6 +16,7 @@ lazy val commonSettings = Seq(
     "com.typesafe" % "config" % "1.4.1",
     "org.scalatest" %% "scalatest" % "3.2.3" % Test
   ),
+
   scalacOptions := Seq(
     "-target:jvm-1.8",
     "-unchecked",
@@ -24,8 +25,25 @@ lazy val commonSettings = Seq(
     "-encoding", "utf8",
     "-Xlint:-missing-interpolator"
   ),
+
   parallelExecution in Test := false,
-  licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
+  publishArtifact in Test := false,
+
+  licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+  homepage := Some(url("https://github.com/reugn/aerospike-client-scala")),
+  scmInfo := Some(ScmInfo(url("https://github.com/reugn/aerospike-client-scala"), "git@github.com:reugn/aerospike-client-scala.git")),
+  developers := List(Developer("reugn", "reugn", "reugpro@gmail.com", url("https://github.com/reugn"))),
+  publishMavenStyle := true,
+
+  pomIncludeRepository := { _ => false },
+
+  publishTo := {
+    val nexus = "https://s01.oss.sonatype.org/"
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "content/repositories/snapshots")
+    else
+      Some("releases" at nexus + "service/local/staging/deploy/maven2")
+  },
 )
 
 lazy val noPublishSettings = Seq(
