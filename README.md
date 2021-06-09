@@ -1,5 +1,5 @@
 # aerospike-client-scala
-[![Build Status](https://travis-ci.com/reugn/aerospike-client-scala.svg?branch=master)](https://travis-ci.com/reugn/aerospike-client-scala)
+[![Build](https://github.com/reugn/aerospike-client-scala/actions/workflows/build.yml/badge.svg)](https://github.com/reugn/aerospike-client-scala/actions/workflows/build.yml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.reugn/aerospike-core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.reugn/aerospike-core_2.12/)
 
 Idiomatic and reactive Scala client for [Aerospike](https://www.aerospike.com/) database.
