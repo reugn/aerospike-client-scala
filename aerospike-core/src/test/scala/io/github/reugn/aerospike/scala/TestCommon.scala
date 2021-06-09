@@ -6,7 +6,7 @@ import scala.language.higherKinds
 
 trait TestCommon {
 
-  protected val hostname = "172.17.0.4"
+  protected val hostname = "localhost"
   protected val port = 3000
 
   protected val namespace = "test"
