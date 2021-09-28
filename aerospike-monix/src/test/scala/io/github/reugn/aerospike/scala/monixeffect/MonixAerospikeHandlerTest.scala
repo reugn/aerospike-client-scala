@@ -36,6 +36,12 @@ class MonixAerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Match
     record.bins.get("intBin").asInstanceOf[Long] shouldBe 0
   }
 
+  it should "get records properly" in {
+    val t = client.getBatch(keys.toIndexedSeq)
+    val records = Await.result(t.runToFuture, Duration.Inf)
+    records.size shouldBe keys.length
+  }
+
   it should "append bin properly" in {
     val t = client.append(keys(0), new Bin("strBin", "_"))
     Await.result(t.runToFuture, Duration.Inf)

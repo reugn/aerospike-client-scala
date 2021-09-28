@@ -1,13 +1,12 @@
 package io.github.reugn.aerospike.scala
 
-import java.util.Calendar
-
 import com.aerospike.client._
 import com.aerospike.client.cluster.Node
 import com.aerospike.client.policy._
 import com.aerospike.client.query.{KeyRecord, Statement}
 import com.aerospike.client.task.ExecuteTask
 
+import java.util.Calendar
 import scala.language.higherKinds
 
 trait AsyncHandler[F[_]] {
@@ -20,21 +19,21 @@ trait AsyncHandler[F[_]] {
   // Write Record Operations
   //-------------------------------------------------------
 
-  def put(key: Key, bins: Bin*)(implicit policy: WritePolicy = null): F[Unit]
+  def put(key: Key, bins: Bin*)(implicit policy: WritePolicy = null): F[Key]
 
   //-------------------------------------------------------
   // String Operations
   //-------------------------------------------------------
 
-  def append(key: Key, bins: Bin*)(implicit policy: WritePolicy = null): F[Unit]
+  def append(key: Key, bins: Bin*)(implicit policy: WritePolicy = null): F[Key]
 
-  def prepend(key: Key, bins: Bin*)(implicit policy: WritePolicy = null): F[Unit]
+  def prepend(key: Key, bins: Bin*)(implicit policy: WritePolicy = null): F[Key]
 
   //-------------------------------------------------------
   // Arithmetic Operations
   //-------------------------------------------------------
 
-  def add(key: Key, bins: Bin*)(implicit policy: WritePolicy = null): F[Unit]
+  def add(key: Key, bins: Bin*)(implicit policy: WritePolicy = null): F[Key]
 
   //-------------------------------------------------------
   // Delete Operations
@@ -49,7 +48,7 @@ trait AsyncHandler[F[_]] {
   // Touch Operations
   //-------------------------------------------------------
 
-  def touch(key: Key)(implicit policy: WritePolicy = null): F[Unit]
+  def touch(key: Key)(implicit policy: WritePolicy = null): F[Key]
 
   //-------------------------------------------------------
   // Existence-Check Operations

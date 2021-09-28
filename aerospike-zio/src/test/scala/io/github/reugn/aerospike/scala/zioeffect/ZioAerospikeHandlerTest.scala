@@ -2,7 +2,6 @@ package io.github.reugn.aerospike.scala.zioeffect
 
 import com.aerospike.client.{Bin, Operation}
 import io.github.reugn.aerospike.scala.TestCommon
-import io.github.reugn.aerospike.scala.TestCommon
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -31,6 +30,12 @@ class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers 
     val t = client.get(keys(0))
     val record = rt.unsafeRun(t)
     record.bins.get("intBin").asInstanceOf[Long] shouldBe 0
+  }
+
+  it should "get records properly" in {
+    val t = client.getBatch(keys.toIndexedSeq)
+    val records = rt.unsafeRun(t)
+    records.size shouldBe keys.length
   }
 
   it should "append bin properly" in {

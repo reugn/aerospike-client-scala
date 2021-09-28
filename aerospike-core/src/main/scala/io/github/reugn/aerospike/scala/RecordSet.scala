@@ -1,10 +1,10 @@
 package io.github.reugn.aerospike.scala
 
-import java.io.Closeable
-import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
-
 import com.aerospike.client.query.KeyRecord
 import com.aerospike.client.{Key, Record}
+
+import java.io.Closeable
+import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 object RecordSet {
   val END: KeyRecord = new KeyRecord(null, null)
@@ -16,7 +16,7 @@ object RecordSet {
 
     override def hasNext: Boolean = more
 
-    override def next: KeyRecord = {
+    override def next(): KeyRecord = {
       val kr: KeyRecord = recordSet.record
       more = recordSet.next
       kr

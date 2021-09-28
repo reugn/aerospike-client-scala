@@ -35,6 +35,12 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
     }
   }
 
+  it should "get records properly" in {
+    client.getBatch(keys.toIndexedSeq) map {
+      _.size shouldBe keys.length
+    }
+  }
+
   it should "append bin properly" in {
     client.append(keys(0), new Bin("strBin", "_")) flatMap {
       _ =>
