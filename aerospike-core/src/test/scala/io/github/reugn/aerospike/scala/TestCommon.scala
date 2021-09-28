@@ -15,7 +15,7 @@ trait TestCommon {
   protected val numberOfKeys = 10
   protected val keys: Array[Key] = new Array[Key](numberOfKeys)
 
-  protected def populateKeys[T[_]](handler: AsyncHandler[T]): Seq[T[Unit]] = {
+  protected def populateKeys[T[_]](handler: AsyncHandler[T]): Seq[T[Key]] = {
     (0 until numberOfKeys) map {
       i => {
         val key = new Key(namespace, set, "key_" + i)
