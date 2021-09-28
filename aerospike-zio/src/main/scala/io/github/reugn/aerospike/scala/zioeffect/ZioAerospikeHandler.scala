@@ -1,35 +1,35 @@
 package io.github.reugn.aerospike.scala.zioeffect
 
-import java.util.Calendar
-
 import com.aerospike.client._
 import com.aerospike.client.cluster.Node
 import com.aerospike.client.policy._
 import com.aerospike.client.query.{KeyRecord, PartitionFilter, Statement}
 import com.aerospike.client.task.ExecuteTask
-import io.github.reugn.aerospike.scala._
 import com.typesafe.config.Config
+import io.github.reugn.aerospike.scala._
 import zio.Task
 import zio.stream.ZStream
+
+import java.util.Calendar
 
 class ZioAerospikeHandler(protected val client: AerospikeClient)
   extends AsyncHandler[Task]
     with StreamHandler3[ZStream] {
 
-  override def put(key: Key, bins: Bin*)(implicit policy: WritePolicy): Task[Unit] = {
-    Task(client.put(policy, key, bins: _*))
+  override def put(key: Key, bins: Bin*)(implicit policy: WritePolicy): Task[Key] = {
+    Task(client.put(policy, key, bins: _*)).map(_ => key)
   }
 
-  override def append(key: Key, bins: Bin*)(implicit policy: WritePolicy): Task[Unit] = {
-    Task(client.append(policy, key, bins: _*))
+  override def append(key: Key, bins: Bin*)(implicit policy: WritePolicy): Task[Key] = {
+    Task(client.append(policy, key, bins: _*)).map(_ => key)
   }
 
-  override def prepend(key: Key, bins: Bin*)(implicit policy: WritePolicy): Task[Unit] = {
-    Task(client.prepend(policy, key, bins: _*))
+  override def prepend(key: Key, bins: Bin*)(implicit policy: WritePolicy): Task[Key] = {
+    Task(client.prepend(policy, key, bins: _*)).map(_ => key)
   }
 
-  override def add(key: Key, bins: Bin*)(implicit policy: WritePolicy): Task[Unit] = {
-    Task(client.add(policy, key, bins: _*))
+  override def add(key: Key, bins: Bin*)(implicit policy: WritePolicy): Task[Key] = {
+    Task(client.add(policy, key, bins: _*)).map(_ => key)
   }
 
   override def delete(key: Key)(implicit policy: WritePolicy): Task[Boolean] = {
@@ -41,8 +41,8 @@ class ZioAerospikeHandler(protected val client: AerospikeClient)
     Task(client.truncate(policy, ns, set, beforeLastUpdate.orNull))
   }
 
-  override def touch(key: Key)(implicit policy: WritePolicy): Task[Unit] = {
-    Task(client.touch(policy, key))
+  override def touch(key: Key)(implicit policy: WritePolicy): Task[Key] = {
+    Task(client.touch(policy, key)).map(_ => key)
   }
 
   override def exists(key: Key)(implicit policy: Policy): Task[Boolean] = {
