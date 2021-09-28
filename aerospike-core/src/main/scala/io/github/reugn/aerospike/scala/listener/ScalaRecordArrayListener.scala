@@ -6,7 +6,7 @@ import com.aerospike.client.{AerospikeException, Key, Record}
 class ScalaRecordArrayListener extends RecordArrayListener with PromiseLike[Seq[Record]] {
 
   override def onSuccess(keys: Array[Key], records: Array[Record]): Unit = {
-    success(records)
+    success(records.toIndexedSeq)
   }
 
   override def onFailure(exception: AerospikeException): Unit = {

@@ -6,7 +6,7 @@ import com.aerospike.client.{AerospikeException, Key}
 class ScalaExistsArrayListener extends ExistsArrayListener with PromiseLike[Seq[Boolean]] {
 
   override def onSuccess(keys: Array[Key], exists: Array[Boolean]): Unit = {
-    success(exists)
+    success(exists.toIndexedSeq)
   }
 
   override def onFailure(exception: AerospikeException): Unit = {

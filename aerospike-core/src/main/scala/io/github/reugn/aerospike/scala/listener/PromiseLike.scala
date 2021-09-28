@@ -5,7 +5,7 @@ import scala.util.{Failure, Success}
 
 trait PromiseLike[T] {
 
-  private val p: Promise[T] = Promise[T]
+  private val p: Promise[T] = Promise[T]()
 
   /**
    * Completes the underlying promise with a value.

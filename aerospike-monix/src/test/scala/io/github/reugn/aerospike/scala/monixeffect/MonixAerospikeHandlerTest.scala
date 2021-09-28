@@ -37,7 +37,7 @@ class MonixAerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Match
   }
 
   it should "get records properly" in {
-    val t = client.getBatch(keys)
+    val t = client.getBatch(keys.toIndexedSeq)
     val records = Await.result(t.runToFuture, Duration.Inf)
     records.size shouldBe keys.length
   }

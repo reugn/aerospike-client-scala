@@ -33,7 +33,7 @@ class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers 
   }
 
   it should "get records properly" in {
-    val t = client.getBatch(keys)
+    val t = client.getBatch(keys.toIndexedSeq)
     val records = rt.unsafeRun(t)
     records.size shouldBe keys.length
   }
