@@ -1,20 +1,36 @@
 val ZIOVersion = "1.0.12"
 val MonixVersion = "3.4.0"
-val AerospikeVersion = "5.1.8"
+val AerospikeVersion = "5.1.11"
 val AkkaStreamVersion = "2.6.16"
 val NettyVersion = "4.1.68.Final"
+val NettyIncubatorVersion = "0.0.12.Final"
+val akkaVersion = "2.6.18"
+val testContainerScalaVersion = "0.39.12"
+val pureConfigVersion = "0.17.1"
+val scalaLoggingVersion = "3.9.3"
+
+val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
+val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion
+val pureConfig = "com.github.pureconfig" %% "pureconfig" % pureConfigVersion
+val testContainerScala = "com.dimafeng" %% "testcontainers-scala" % testContainerScalaVersion % Test
+val testContainerScalaTest = "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainerScalaVersion % Test
+val scala212 = "2.12.15"
+val scala213 = "2.13.8"
 
 lazy val commonSettings = Seq(
   organization := "io.github.reugn",
-  scalaVersion := "2.12.15",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.6"),
+  scalaVersion := scala212,
+  crossScalaVersions := Seq(scala212,scala213),
 
   libraryDependencies ++= Seq(
     "com.aerospike" % "aerospike-client" % AerospikeVersion,
     "com.typesafe.akka" %% "akka-stream" % AkkaStreamVersion,
     "io.netty" % "netty-all" % NettyVersion,
-    "com.typesafe" % "config" % "1.4.1",
-    "org.scalatest" %% "scalatest" % "3.2.10" % Test
+    "io.netty.incubator" % "netty-incubator-transport-native-io_uring" % NettyIncubatorVersion,
+      pureConfig,
+    testContainerScala,
+    testContainerScalaTest,
+    "org.scalatest" %% "scalatest" % "3.2.10" % Test,
   ),
 
   scalacOptions := Seq(
@@ -80,6 +96,18 @@ lazy val monix = (project in file("aerospike-monix")).settings(
 )).dependsOn(
   core % "test->test;compile->compile"
 )
+
+lazy val akka = (project in file("aerospike-core-cs")).settings(
+  commonSettings
+).settings(
+  name := "aerospike-core-cs"
+).settings(libraryDependencies ++= Seq(
+  akkaActor,
+  akkaTestkit % "test"
+)).dependsOn(
+  core % "test->test;compile->compile"
+)
+
 
 lazy val root = (project in file(".")).settings(
   noPublishSettings,
