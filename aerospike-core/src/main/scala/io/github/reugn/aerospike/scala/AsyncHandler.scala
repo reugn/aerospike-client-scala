@@ -41,6 +41,9 @@ trait AsyncHandler[F[_]] {
 
   def delete(key: Key)(implicit policy: WritePolicy = null): F[Boolean]
 
+  def deleteBatch(keys: Seq[Key])
+                 (implicit policy: BatchPolicy = null, batchDeletePolicy: BatchDeletePolicy = null): F[BatchResults]
+
   def truncate(ns: String, set: String, beforeLastUpdate: Option[Calendar] = None)
               (implicit policy: InfoPolicy = null): F[Unit]
 
@@ -64,13 +67,11 @@ trait AsyncHandler[F[_]] {
 
   def get(key: Key, binNames: String*)(implicit policy: Policy = null): F[Record]
 
-  def getHeader(key: Key)(implicit policy: Policy = null): F[Record]
-
-  //-------------------------------------------------------
-  // Batch Read Operations
-  //-------------------------------------------------------
-
   def getBatch(keys: Seq[Key], binNames: String*)(implicit policy: BatchPolicy = null): F[Seq[Record]]
+
+  def getBatchOp(keys: Seq[Key], operations: Operation*)(implicit policy: BatchPolicy = null): F[Seq[Record]]
+
+  def getHeader(key: Key)(implicit policy: Policy = null): F[Record]
 
   def getHeaderBatch(keys: Seq[Key])(implicit policy: BatchPolicy = null): F[Seq[Record]]
 
@@ -79,6 +80,12 @@ trait AsyncHandler[F[_]] {
   //-------------------------------------------------------
 
   def operate(key: Key, operations: Operation*)(implicit policy: WritePolicy = null): F[Record]
+
+  def operateBatch(keys: Seq[Key], operations: Operation*)
+                  (implicit policy: BatchPolicy = null, batchWritePolicy: BatchWritePolicy = null): F[BatchResults]
+
+  def operateBatchRecord(records: Seq[BatchRecord])
+                        (implicit policy: BatchPolicy = null): F[Boolean]
 
   //-------------------------------------------------------
   // Scan Operations

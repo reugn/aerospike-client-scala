@@ -2,12 +2,14 @@ package io.github.reugn.aerospike.scala
 
 import com.aerospike.client.query.KeyRecord
 import com.aerospike.client.{Key, Record}
+import io.github.reugn.aerospike.scala.RecordSet.queueCapacity
 
 import java.io.Closeable
-import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 object RecordSet {
-  val END: KeyRecord = new KeyRecord(null, null)
+  private val END: KeyRecord = new KeyRecord(null, null)
+  private val queueCapacity = 256
 
   private class RecordSetIterator private[RecordSet](val recordSet: RecordSet)
     extends Iterator[KeyRecord] with Closeable {
@@ -17,39 +19,47 @@ object RecordSet {
     override def hasNext: Boolean = more
 
     override def next(): KeyRecord = {
-      val kr: KeyRecord = recordSet.record
+      val keyRecord: KeyRecord = recordSet.record
       more = recordSet.next
-      kr
+      keyRecord
     }
 
     override def close(): Unit = {
       recordSet.close()
     }
   }
-
 }
 
-final class RecordSet(val capacity: Int) extends Iterable[KeyRecord] with Closeable {
-  private val queue: BlockingQueue[KeyRecord] = new ArrayBlockingQueue[KeyRecord](capacity)
+final class RecordSet extends Iterable[KeyRecord] with Closeable {
+  private val queue: BlockingQueue[KeyRecord] = new LinkedBlockingQueue[KeyRecord](queueCapacity)
   private var record: KeyRecord = _
   private var valid: Boolean = true
+  @volatile private var exception: Exception = _
 
   def next: Boolean = {
-    try record = queue.take
-    catch {
-      case _: InterruptedException =>
+    if (valid) {
+      try record = queue.take()
+      catch {
+        case _: InterruptedException =>
+          valid = false
+      }
+      if (record eq RecordSet.END) {
+        if (exception != null) {
+          throw exception
+        }
         valid = false
-        return false
+      }
     }
-    if (record eq RecordSet.END) {
-      valid = false
-      false
-    }
-    else true
+    valid
+  }
+
+  def closeExceptionally(e: Exception): Unit = {
+    exception = e
+    close()
   }
 
   override def close(): Unit = {
-    valid = false
+    put(RecordSet.END)
   }
 
   override def iterator: Iterator[KeyRecord] = new RecordSet.RecordSetIterator(this)
