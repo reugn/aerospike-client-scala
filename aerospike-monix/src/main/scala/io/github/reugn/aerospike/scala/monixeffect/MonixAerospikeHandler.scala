@@ -14,7 +14,7 @@ import monix.reactive.Observable
 import java.util.Calendar
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
-class MonixAerospikeHandler(protected val client: AerospikeClient)
+class MonixAerospikeHandler(protected val client: IAerospikeClient)
   extends AsyncHandler[Task]
     with StreamHandler1[Observable] {
 
@@ -149,7 +149,7 @@ object MonixAerospikeHandler {
 
   import io.github.reugn.aerospike.scala.Policies.ClientPolicyImplicits._
 
-  def apply(client: AerospikeClient): MonixAerospikeHandler =
+  def apply(client: IAerospikeClient): MonixAerospikeHandler =
     new MonixAerospikeHandler(client)
 
   def apply(config: Config): MonixAerospikeHandler =

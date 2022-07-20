@@ -11,9 +11,9 @@ import scala.language.higherKinds
 
 trait AsyncHandler[F[_]] {
 
-  protected def client: AerospikeClient
+  protected def client: IAerospikeClient
 
-  def asJava: AerospikeClient = client
+  def asJava: IAerospikeClient = client
 
   //-------------------------------------------------------
   // Write Record Operations

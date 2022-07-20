@@ -14,7 +14,7 @@ import zio.stream.ZStream
 import java.util.Calendar
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
-class ZioAerospikeHandler(protected val client: AerospikeClient)
+class ZioAerospikeHandler(protected val client: IAerospikeClient)
   extends AsyncHandler[Task]
     with StreamHandler3[ZStream] {
 
@@ -149,7 +149,7 @@ object ZioAerospikeHandler {
 
   import Policies.ClientPolicyImplicits._
 
-  def apply(client: AerospikeClient): ZioAerospikeHandler =
+  def apply(client: IAerospikeClient): ZioAerospikeHandler =
     new ZioAerospikeHandler(client)
 
   def apply(config: Config): ZioAerospikeHandler =

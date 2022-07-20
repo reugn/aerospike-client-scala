@@ -15,7 +15,7 @@ import java.util.Calendar
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: ExecutionContext)
+class AerospikeHandler(protected val client: IAerospikeClient)(implicit ec: ExecutionContext)
   extends AsyncHandler[Future]
     with StreamHandler2[Source] {
 
@@ -178,7 +178,7 @@ object AerospikeHandler {
 
   import Policies.ClientPolicyImplicits._
 
-  def apply(client: AerospikeClient)(implicit ec: ExecutionContext): AerospikeHandler =
+  def apply(client: IAerospikeClient)(implicit ec: ExecutionContext): AerospikeHandler =
     new AerospikeHandler(client)
 
   def apply(config: Config)(implicit ec: ExecutionContext): AerospikeHandler =
