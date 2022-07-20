@@ -23,9 +23,7 @@ class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers 
   }
 
   after {
-    for (t <- deleteKeys(client)) {
-      rt.unsafeRun(t)
-    }
+    rt.unsafeRun(deleteKeys(client))
   }
 
   it should "get record properly" in {

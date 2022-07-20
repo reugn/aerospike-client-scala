@@ -27,9 +27,7 @@ class MonixAerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Match
   }
 
   after {
-    for (t <- deleteKeys(client)) {
-      Await.result(t.runToFuture, Duration.Inf)
-    }
+    Await.result(deleteKeys(client).runToFuture, Duration.Inf)
   }
 
   it should "get record properly" in {

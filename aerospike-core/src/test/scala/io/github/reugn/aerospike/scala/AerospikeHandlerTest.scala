@@ -26,7 +26,7 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
   override def withFixture(test: NoArgAsyncTest) = new FutureOutcome(for {
     _ <- Future.sequence(populateKeys(client))
     result <- super.withFixture(test).toFuture
-    _ <- Future.sequence(deleteKeys(client))
+    _ <- deleteKeys(client)
   } yield result)
 
   behavior of "AerospikeHandler"
@@ -159,6 +159,7 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
     client.operateBatchRecord(records) map {
       _ shouldBe true
     }
+    Thread.sleep(100)
     client.getBatch(keys) map { res =>
       res.filter(_ != null)
     } map { seq =>
