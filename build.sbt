@@ -29,8 +29,8 @@ lazy val commonSettings = Seq(
     "-Xlint:-missing-interpolator"
   ),
 
-  parallelExecution in Test := false,
-  publishArtifact in Test := false,
+  Test / parallelExecution := false,
+  Test / publishArtifact := false,
 
   licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
   homepage := Some(url("https://github.com/reugn/aerospike-client-scala")),
@@ -53,7 +53,7 @@ lazy val noPublishSettings = Seq(
   publish := {},
   publishLocal := {},
   publishArtifact := false,
-  skip in publish := true
+  publish / skip := true
 )
 
 lazy val core = (project in file("aerospike-core")).settings(
