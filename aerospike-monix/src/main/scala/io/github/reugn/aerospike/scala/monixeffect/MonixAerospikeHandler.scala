@@ -3,16 +3,18 @@ package io.github.reugn.aerospike.scala.monixeffect
 import com.aerospike.client._
 import com.aerospike.client.cluster.Node
 import com.aerospike.client.policy._
-import com.aerospike.client.query.{KeyRecord, PartitionFilter, Statement}
+import com.aerospike.client.query.{KeyRecord, Statement}
 import com.aerospike.client.task.ExecuteTask
 import com.typesafe.config.Config
 import io.github.reugn.aerospike.scala._
+import io.github.reugn.aerospike.scala.model.QueryStatement
 import monix.eval.Task
 import monix.reactive.Observable
 
 import java.util.Calendar
+import scala.collection.JavaConverters.seqAsJavaListConverter
 
-class MonixAerospikeHandler(protected val client: AerospikeClient)
+class MonixAerospikeHandler(protected val client: IAerospikeClient)
   extends AsyncHandler[Task]
     with StreamHandler1[Observable] {
 
@@ -34,6 +36,11 @@ class MonixAerospikeHandler(protected val client: AerospikeClient)
 
   override def delete(key: Key)(implicit policy: WritePolicy): Task[Boolean] = {
     Task(client.delete(policy, key))
+  }
+
+  override def deleteBatch(keys: Seq[Key])
+                          (implicit policy: BatchPolicy, batchDeletePolicy: BatchDeletePolicy): Task[BatchResults] = {
+    Task(client.delete(policy, batchDeletePolicy, keys.toArray))
   }
 
   override def truncate(ns: String, set: String, beforeLastUpdate: Option[Calendar] = None)
@@ -62,10 +69,6 @@ class MonixAerospikeHandler(protected val client: AerospikeClient)
     }
   }
 
-  override def getHeader(key: Key)(implicit policy: Policy): Task[Record] = {
-    Task(client.getHeader(policy, key))
-  }
-
   override def getBatch(keys: Seq[Key], binNames: String*)(implicit policy: BatchPolicy): Task[Seq[Record]] = {
     Task {
       if (binNames.toArray.length > 0)
@@ -77,12 +80,29 @@ class MonixAerospikeHandler(protected val client: AerospikeClient)
     }
   }
 
+  override def getBatchOp(keys: Seq[Key], operations: Operation*)(implicit policy: BatchPolicy): Task[Seq[Record]] = {
+    Task(client.get(policy, keys.toArray, operations: _*))
+  }
+
+  override def getHeader(key: Key)(implicit policy: Policy): Task[Record] = {
+    Task(client.getHeader(policy, key))
+  }
+
   override def getHeaderBatch(keys: Seq[Key])(implicit policy: BatchPolicy): Task[Seq[Record]] = {
     Task(client.getHeader(policy, keys.toArray)).map(_.toIndexedSeq)
   }
 
   override def operate(key: Key, operations: Operation*)(implicit policy: WritePolicy): Task[Record] = {
     Task(client.operate(policy, key, operations: _*))
+  }
+
+  override def operateBatch(keys: Seq[Key], operations: Operation*)
+                           (implicit policy: BatchPolicy, batchWritePolicy: BatchWritePolicy): Task[BatchResults] = {
+    Task(client.operate(policy, batchWritePolicy, keys.toArray, operations: _*))
+  }
+
+  override def operateBatchRecord(records: Seq[BatchRecord])(implicit policy: BatchPolicy): Task[Boolean] = {
+    Task(client.operate(policy, records.asJava))
   }
 
   override def scanNodeName(nodeName: String, ns: String, set: String, binNames: String*)
@@ -112,17 +132,15 @@ class MonixAerospikeHandler(protected val client: AerospikeClient)
     Task(Info.request(node, name))
   }
 
-  override def scanAll(ns: String, set: String, binNames: String*)
-                      (implicit policy: ScanPolicy): Observable[KeyRecord] = {
-    val listener = new ScanRecordSequenceListener
-    client.scanAll(null, listener, policy, ns, set)
-    Observable.fromIterator(Task(listener.getRecordSet.iterator))
-  }
-
-  override def scanPartitions(filter: PartitionFilter, ns: String, set: String, binNames: String*)
-                             (implicit policy: ScanPolicy): Observable[KeyRecord] = {
-    val listener = new ScanRecordSequenceListener
-    client.scanPartitions(null, listener, policy, filter, ns, set)
+  override def query(statement: QueryStatement)
+                    (implicit policy: QueryPolicy): Observable[KeyRecord] = {
+    val listener = new QueryRecordSequenceListener
+    statement.partitionFilter match {
+      case Some(partitionFilter) =>
+        client.queryPartitions(null, listener, policy, statement.statement, partitionFilter)
+      case None =>
+        client.query(null, listener, policy, statement.statement)
+    }
     Observable.fromIterator(Task(listener.getRecordSet.iterator))
   }
 }
@@ -131,7 +149,7 @@ object MonixAerospikeHandler {
 
   import io.github.reugn.aerospike.scala.Policies.ClientPolicyImplicits._
 
-  def apply(client: AerospikeClient): MonixAerospikeHandler =
+  def apply(client: IAerospikeClient): MonixAerospikeHandler =
     new MonixAerospikeHandler(client)
 
   def apply(config: Config): MonixAerospikeHandler =

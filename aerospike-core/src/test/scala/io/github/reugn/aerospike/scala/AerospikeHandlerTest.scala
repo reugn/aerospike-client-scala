@@ -3,8 +3,11 @@ package io.github.reugn.aerospike.scala
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
-import com.aerospike.client.query.KeyRecord
-import com.aerospike.client.{Bin, Operation}
+import com.aerospike.client._
+import com.aerospike.client.exp.{Exp, ExpOperation, ExpReadFlags}
+import com.aerospike.client.policy.BatchWritePolicy
+import com.aerospike.client.query.{Filter, KeyRecord}
+import io.github.reugn.aerospike.scala.model.QueryStatement
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, FutureOutcome}
@@ -23,7 +26,7 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
   override def withFixture(test: NoArgAsyncTest) = new FutureOutcome(for {
     _ <- Future.sequence(populateKeys(client))
     result <- super.withFixture(test).toFuture
-    _ <- Future.sequence(deleteKeys(client))
+    _ <- deleteKeys(client)
   } yield result)
 
   behavior of "AerospikeHandler"
@@ -31,7 +34,7 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
   it should "get record properly" in {
     client.get(keys(0)) map {
       record =>
-        record.bins.get("intBin").asInstanceOf[Long] shouldBe 0
+        record.getLong("intBin") shouldBe 0L
     }
   }
 
@@ -41,11 +44,28 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
     }
   }
 
+  it should "get records with read operations properly" in {
+    val mulIntBin = "mulIntBin"
+    val multiplier = 10L
+    val mulExp = Exp.build(Exp.mul(Exp.intBin("intBin"), Exp.`val`(multiplier)))
+    client.getBatchOp(keys, ExpOperation.read(mulIntBin, mulExp, ExpReadFlags.DEFAULT)) map { seq =>
+      seq.size shouldBe keys.length
+      seq.zipWithIndex.map { case (rec: Record, i: Int) =>
+        val expected = multiplier * i
+        rec.getLong(mulIntBin) == expected
+      }
+    } map { seq =>
+      seq.forall(_ == true)
+    } map {
+      _ shouldBe true
+    }
+  }
+
   it should "append bin properly" in {
     client.append(keys(0), new Bin("strBin", "_")) flatMap {
       _ =>
         client.get(keys(0)) map { record =>
-          record.bins.get("strBin").asInstanceOf[String] shouldBe "str_0_"
+          record.getString("strBin") shouldBe "str_0_"
         }
     }
   }
@@ -54,7 +74,7 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
     client.prepend(keys(0), new Bin("strBin", "_")) flatMap {
       _ =>
         client.get(keys(0)) map { record =>
-          record.bins.get("strBin").asInstanceOf[String] shouldBe "_str_0"
+          record.getString("strBin") shouldBe "_str_0"
         }
     }
   }
@@ -63,7 +83,7 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
     client.add(keys(0), new Bin("intBin", 10)) flatMap {
       _ =>
         client.get(keys(0)) map { record =>
-          record.bins.get("intBin").asInstanceOf[Long] shouldBe 10
+          record.getLong("intBin") shouldBe 10L
         }
     }
   }
@@ -74,6 +94,18 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
         result shouldBe true
         client.get(keys(0)) map { record =>
           record shouldBe null
+        }
+    }
+  }
+
+  it should "delete batch of records properly" in {
+    client.deleteBatch(keys.toSeq) flatMap {
+      result =>
+        result.status shouldBe true
+        client.getBatch(keys.toSeq) map { seq =>
+          seq.filter(_ != null)
+        } map { record =>
+          record shouldBe empty
         }
     }
   }
@@ -96,8 +128,45 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
     client.operate(keys(0), Operation.put(new Bin("intBin", 100))) flatMap {
       _ =>
         client.get(keys(0)) map { record =>
-          record.bins.get("intBin").asInstanceOf[Long] shouldBe 100
+          record.getLong("intBin") shouldBe 100L
         }
+    }
+  }
+
+  it should "operate batch of records properly" in {
+    implicit val bwp: BatchWritePolicy = new BatchWritePolicy
+    bwp.expiration = -2
+    client.operateBatch(keys.toSeq,
+      Operation.put(new Bin("intBin", 100))) flatMap {
+      batchResults =>
+        batchResults.status shouldBe true
+        client.getBatch(keys) map { seq =>
+          seq.map { rec =>
+            rec.getLong("intBin") == 100L
+          }
+        } map { seq =>
+          seq.forall(_ == true)
+        } map {
+          _ shouldBe true
+        }
+    }
+  }
+
+  it should "operate list of BatchRecords properly" in {
+    val records: Seq[BatchRecord] =
+      List(new BatchWrite(keys(0), Array(Operation.put(new Bin("intBin", 100))))) ++
+        keys.slice(1, numberOfKeys).map(new BatchDelete(_)).toList
+    client.operateBatchRecord(records) map {
+      _ shouldBe true
+    }
+    Thread.sleep(100)
+    client.getBatch(keys) map { res =>
+      res.filter(_ != null)
+    } map { seq =>
+      seq.length shouldBe 1
+      seq.head.getLong("intBin")
+    } map {
+      _ shouldBe 100L
     }
   }
 
@@ -117,10 +186,22 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
     }).map(_.sum shouldBe numberOfKeys)
   }
 
-  it should "scan all properly" in {
-    client.scanAll(namespace, set).runWith(Sink.seq[KeyRecord]) map {
+  it should "query all properly" in {
+    val queryStatement = QueryStatement(namespace, setName = Some(set))
+    client.query(queryStatement).runWith(Sink.seq[KeyRecord]) map {
       _.length shouldBe numberOfKeys
     }
   }
 
+  it should "fail on non-existent secondary index query" in {
+    val queryStatement = QueryStatement(
+      namespace,
+      setName = Some(set),
+      secondaryIndexName = Some("idx1"),
+      secondaryIndexFilter = Some(Filter.equal("bin1", 1))
+    )
+    assertThrows[AerospikeException] {
+      client.query(queryStatement).runWith(Sink.seq[KeyRecord])
+    }
+  }
 }

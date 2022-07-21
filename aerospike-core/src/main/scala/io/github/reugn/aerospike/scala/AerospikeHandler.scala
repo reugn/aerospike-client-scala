@@ -5,15 +5,17 @@ import akka.stream.scaladsl.Source
 import com.aerospike.client._
 import com.aerospike.client.cluster.Node
 import com.aerospike.client.policy._
-import com.aerospike.client.query.{KeyRecord, PartitionFilter, Statement}
+import com.aerospike.client.query.{KeyRecord, Statement}
 import com.aerospike.client.task.ExecuteTask
 import com.typesafe.config.Config
 import io.github.reugn.aerospike.scala.listener._
+import io.github.reugn.aerospike.scala.model.QueryStatement
 
 import java.util.Calendar
+import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: ExecutionContext)
+class AerospikeHandler(protected val client: IAerospikeClient)(implicit ec: ExecutionContext)
   extends AsyncHandler[Future]
     with StreamHandler2[Source] {
 
@@ -44,6 +46,13 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
   override def delete(key: Key)(implicit policy: WritePolicy): Future[Boolean] = {
     val listener = new ScalaDeleteListener
     client.delete(null, listener, policy, key)
+    listener.future
+  }
+
+  override def deleteBatch(keys: Seq[Key])
+                          (implicit policy: BatchPolicy, batchDeletePolicy: BatchDeletePolicy): Future[BatchResults] = {
+    val listener = new ScalaBatchRecordArrayListener
+    client.delete(null, listener, policy, batchDeletePolicy, keys.toArray)
     listener.future
   }
 
@@ -79,18 +88,24 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
     listener.future
   }
 
-  override def getHeader(key: Key)(implicit policy: Policy): Future[Record] = {
-    val listener = new ScalaRecordListener
-    client.getHeader(null, listener, policy, key)
-    listener.future
-  }
-
   override def getBatch(keys: Seq[Key], binNames: String*)(implicit policy: BatchPolicy): Future[Seq[Record]] = {
     val listener = new ScalaRecordArrayListener
     if (binNames.toArray.length > 0)
       client.get(null, listener, policy, keys.toArray, binNames: _*)
     else
       client.get(null, listener, policy, keys.toArray)
+    listener.future
+  }
+
+  override def getBatchOp(keys: Seq[Key], operations: Operation*)(implicit policy: BatchPolicy): Future[Seq[Record]] = {
+    val listener = new ScalaRecordArrayListener
+    client.get(null, listener, policy, keys.toArray, operations: _*)
+    listener.future
+  }
+
+  override def getHeader(key: Key)(implicit policy: Policy): Future[Record] = {
+    val listener = new ScalaRecordListener
+    client.getHeader(null, listener, policy, key)
     listener.future
   }
 
@@ -106,6 +121,19 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
     listener.future
   }
 
+  override def operateBatch(keys: Seq[Key], operations: Operation*)
+                           (implicit policy: BatchPolicy, batchWritePolicy: BatchWritePolicy): Future[BatchResults] = {
+    val listener = new ScalaBatchRecordArrayListener
+    client.operate(null, listener, policy, batchWritePolicy, keys.toArray, operations: _*)
+    listener.future
+  }
+
+  override def operateBatchRecord(records: Seq[BatchRecord])(implicit policy: BatchPolicy): Future[Boolean] = {
+    val listener = new ScalaBatchOperateListListener
+    client.operate(null, listener, policy, records.asJava)
+    listener.future
+  }
+
   override def execute(statement: Statement, operations: Operation*)
                       (implicit policy: WritePolicy): Future[ExecuteTask] = {
     Future(client.execute(policy, statement, operations: _*))
@@ -113,13 +141,6 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
 
   override def info(node: Node, name: String): Future[String] = {
     Future(Info.request(node, name))
-  }
-
-  override def scanAll(ns: String, set: String, binNames: String*)
-                      (implicit policy: ScanPolicy): Source[KeyRecord, NotUsed] = {
-    val listener = new ScanRecordSequenceListener
-    client.scanAll(null, listener, policy, ns, set)
-    Source.fromGraph(new KeyRecordSource(listener.getRecordSet.iterator))
   }
 
   override def scanNodeName(nodeName: String, ns: String, set: String, binNames: String*)
@@ -140,10 +161,15 @@ class AerospikeHandler(protected val client: AerospikeClient)(implicit ec: Execu
     }
   }
 
-  override def scanPartitions(filter: PartitionFilter, ns: String, set: String, binNames: String*)
-                             (implicit policy: ScanPolicy): Source[KeyRecord, NotUsed] = {
-    val listener = new ScanRecordSequenceListener
-    client.scanPartitions(null, listener, policy, filter, ns, set)
+  override def query(statement: QueryStatement)
+                    (implicit policy: QueryPolicy): Source[KeyRecord, NotUsed] = {
+    val listener = new QueryRecordSequenceListener
+    statement.partitionFilter match {
+      case Some(partitionFilter) =>
+        client.queryPartitions(null, listener, policy, statement.statement, partitionFilter)
+      case None =>
+        client.query(null, listener, policy, statement.statement)
+    }
     Source.fromGraph(new KeyRecordSource(listener.getRecordSet.iterator))
   }
 }
@@ -152,7 +178,7 @@ object AerospikeHandler {
 
   import Policies.ClientPolicyImplicits._
 
-  def apply(client: AerospikeClient)(implicit ec: ExecutionContext): AerospikeHandler =
+  def apply(client: IAerospikeClient)(implicit ec: ExecutionContext): AerospikeHandler =
     new AerospikeHandler(client)
 
   def apply(config: Config)(implicit ec: ExecutionContext): AerospikeHandler =

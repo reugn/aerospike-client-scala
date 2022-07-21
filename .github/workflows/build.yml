@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        scala: [ 2.12.14, 2.13.6 ]
+        scala: [ 2.12, 2.13 ]
         java:
           - adopt@1.8
         platform: [ jvm ]

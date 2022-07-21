@@ -1,7 +1,9 @@
 package io.github.reugn.aerospike.scala.zioeffect
 
-import com.aerospike.client.{Bin, Operation}
+import com.aerospike.client._
+import com.aerospike.client.exp.{Exp, ExpOperation, ExpReadFlags}
 import io.github.reugn.aerospike.scala.TestCommon
+import io.github.reugn.aerospike.scala.model.QueryStatement
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -21,15 +23,13 @@ class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers 
   }
 
   after {
-    for (t <- deleteKeys(client)) {
-      rt.unsafeRun(t)
-    }
+    rt.unsafeRun(deleteKeys(client))
   }
 
   it should "get record properly" in {
     val t = client.get(keys(0))
     val record = rt.unsafeRun(t)
-    record.bins.get("intBin").asInstanceOf[Long] shouldBe 0
+    record.getLong("intBin") shouldBe 0L
   }
 
   it should "get records properly" in {
@@ -38,22 +38,37 @@ class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers 
     records.size shouldBe keys.length
   }
 
+  it should "get records with read operations properly" in {
+    val mulIntBin = "mulIntBin"
+    val multiplier = 10L
+    val mulExp = Exp.build(Exp.mul(Exp.intBin("intBin"), Exp.`val`(multiplier)))
+    val t = client.getBatchOp(keys.toIndexedSeq, ExpOperation.read(mulIntBin, mulExp, ExpReadFlags.DEFAULT))
+    val records = rt.unsafeRun(t)
+    records.size shouldBe keys.length
+    records.zipWithIndex.map { case (rec: Record, i: Int) =>
+      val expected = multiplier * i
+      rec.getLong(mulIntBin) == expected
+    } forall {
+      _ == true
+    } shouldBe true
+  }
+
   it should "append bin properly" in {
     rt.unsafeRun(client.append(keys(0), new Bin("strBin", "_")))
     val record = rt.unsafeRun(client.get(keys(0)))
-    record.bins.get("strBin").asInstanceOf[String] shouldBe "str_0_"
+    record.getString("strBin") shouldBe "str_0_"
   }
 
   it should "prepend bin properly" in {
     rt.unsafeRun(client.prepend(keys(0), new Bin("strBin", "_")))
     val record = rt.unsafeRun(client.get(keys(0)))
-    record.bins.get("strBin").asInstanceOf[String] shouldBe "_str_0"
+    record.getString("strBin") shouldBe "_str_0"
   }
 
   it should "add bin properly" in {
     rt.unsafeRun(client.add(keys(0), new Bin("intBin", 10)))
     val record = rt.unsafeRun(client.get(keys(0)))
-    record.bins.get("intBin").asInstanceOf[Long] shouldBe 10
+    record.getLong("intBin") shouldBe 10L
   }
 
   it should "delete record properly" in {
@@ -61,6 +76,12 @@ class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers 
     deleteResult shouldBe true
     val record = rt.unsafeRun(client.get(keys(0)))
     record shouldBe null
+  }
+
+  it should "delete batch of records properly" in {
+    val t = client.deleteBatch(keys.toSeq)
+    val result = rt.unsafeRun(t)
+    result.status shouldBe true
   }
 
   it should "record to be exist" in {
@@ -76,12 +97,28 @@ class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers 
   it should "operate bin properly" in {
     rt.unsafeRun(client.operate(keys(0), Operation.put(new Bin("intBin", 100))))
     val record = rt.unsafeRun(client.get(keys(0)))
-    record.bins.get("intBin").asInstanceOf[Long] shouldBe 100
+    record.getLong("intBin") shouldBe 100L
   }
 
-  it should "scan all properly" in {
-    val t = client.scanAll(namespace, set).runCollect
+  it should "operate batch of records properly" in {
+    val t = client.operateBatch(keys.toSeq,
+      Operation.put(new Bin("intBin", 100)))
+    val result = rt.unsafeRun(t)
+    result.status shouldBe true
+  }
+
+  it should "operate list of BatchRecords properly" in {
+    val records: Seq[BatchRecord] =
+      List(new BatchWrite(keys(0), Array(Operation.put(new Bin("intBin", 100))))) ++
+        keys.slice(1, numberOfKeys).map(new BatchDelete(_)).toList
+    val t = client.operateBatchRecord(records)
+    val result = rt.unsafeRun(t)
+    result shouldBe true
+  }
+
+  it should "query all properly" in {
+    val queryStatement = QueryStatement(namespace, setName = Some(set))
+    val t = client.query(queryStatement).runCollect
     rt.unsafeRun(t).length shouldBe numberOfKeys
   }
-
 }

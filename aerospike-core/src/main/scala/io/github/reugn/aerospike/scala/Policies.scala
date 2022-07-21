@@ -8,8 +8,9 @@ object Policies {
 
   implicit lazy val policy: Policy = new Policy
   implicit lazy val writePolicy: WritePolicy = new WritePolicy
-  implicit lazy val scanPolicy: ScanPolicy = new ScanPolicy
+  implicit lazy val queryPolicy: QueryPolicy = new QueryPolicy
   implicit lazy val infoPolicy: InfoPolicy = new InfoPolicy
+  implicit lazy val batchPolicy: BatchPolicy = new BatchPolicy
 
   object ClientPolicyImplicits {
 
@@ -21,7 +22,5 @@ object Policies {
         clientPolicy
       }
     }
-
   }
-
 }

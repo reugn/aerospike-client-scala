@@ -1,20 +1,23 @@
-val ZIOVersion = "1.0.12"
-val MonixVersion = "3.4.0"
-val AerospikeVersion = "5.1.8"
-val AkkaStreamVersion = "2.6.16"
-val NettyVersion = "4.1.68.Final"
+val ZIOVersion = "1.0.16"
+val MonixVersion = "3.4.1"
+val AerospikeVersion = "6.1.0"
+val AkkaStreamVersion = "2.6.19"
+val NettyVersion = "4.1.79.Final"
 
 lazy val commonSettings = Seq(
   organization := "io.github.reugn",
-  scalaVersion := "2.12.15",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.6"),
+  scalaVersion := "2.12.16",
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.8"),
 
   libraryDependencies ++= Seq(
     "com.aerospike" % "aerospike-client" % AerospikeVersion,
     "com.typesafe.akka" %% "akka-stream" % AkkaStreamVersion,
-    "io.netty" % "netty-all" % NettyVersion,
-    "com.typesafe" % "config" % "1.4.1",
-    "org.scalatest" %% "scalatest" % "3.2.10" % Test
+    "io.netty" % "netty-transport" % NettyVersion,
+    "io.netty" % "netty-transport-native-epoll" % NettyVersion classifier "linux-x86_64",
+    "io.netty" % "netty-transport-native-kqueue" % NettyVersion classifier "osx-x86_64",
+    "io.netty" % "netty-handler" % NettyVersion,
+    "com.typesafe" % "config" % "1.4.2",
+    "org.scalatest" %% "scalatest" % "3.2.12" % Test
   ),
 
   scalacOptions := Seq(
@@ -26,8 +29,8 @@ lazy val commonSettings = Seq(
     "-Xlint:-missing-interpolator"
   ),
 
-  parallelExecution in Test := false,
-  publishArtifact in Test := false,
+  Test / parallelExecution := false,
+  Test / publishArtifact := false,
 
   licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
   homepage := Some(url("https://github.com/reugn/aerospike-client-scala")),
@@ -50,7 +53,7 @@ lazy val noPublishSettings = Seq(
   publish := {},
   publishLocal := {},
   publishArtifact := false,
-  skip in publish := true
+  publish / skip := true
 )
 
 lazy val core = (project in file("aerospike-core")).settings(
@@ -66,7 +69,7 @@ lazy val zio = (project in file("aerospike-zio")).settings(
 ).settings(libraryDependencies ++= Seq(
   "dev.zio" %% "zio" % ZIOVersion,
   "dev.zio" %% "zio-streams" % ZIOVersion,
-  "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5"
+  "dev.zio" %% "zio-interop-reactivestreams" % "1.3.12"
 )).dependsOn(
   core % "test->test;compile->compile"
 )

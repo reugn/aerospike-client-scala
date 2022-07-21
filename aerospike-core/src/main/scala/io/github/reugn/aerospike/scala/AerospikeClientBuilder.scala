@@ -1,10 +1,10 @@
 package io.github.reugn.aerospike.scala
 
 import com.aerospike.client.policy.{AuthMode, ClientPolicy}
-import com.aerospike.client.{AerospikeClient, Host}
+import com.aerospike.client.{AerospikeClient, Host, IAerospikeClient}
+import com.typesafe.config.Config
 import io.github.reugn.aerospike.scala.AerospikeClientBuilder._
 import io.github.reugn.aerospike.scala.Policies.ClientPolicyImplicits._
-import com.typesafe.config.Config
 
 class AerospikeClientBuilder(config: Config) {
 
@@ -32,7 +32,7 @@ class AerospikeClientBuilder(config: Config) {
     policy.withEventLoops()
   }
 
-  def build(): AerospikeClient = {
+  def build(): IAerospikeClient = {
     Option(config.getString("aerospike.hostList")) map {
       hostList =>
         new AerospikeClient(buildClientPolicy(), Host.parseHosts(hostList, defaultPort): _*)
