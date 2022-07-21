@@ -200,9 +200,8 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
       secondaryIndexName = Some("idx1"),
       secondaryIndexFilter = Some(Filter.equal("bin1", 1))
     )
-    val thrown = intercept[AerospikeException] {
+    assertThrows[AerospikeException] {
       client.query(queryStatement).runWith(Sink.seq[KeyRecord])
     }
-    thrown.getMessage should include("Index not found")
   }
 }
