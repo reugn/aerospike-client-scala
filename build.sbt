@@ -1,3 +1,8 @@
+// Keep this format!
+lazy val scala213 = "2.13.9"
+lazy val scala212 = "2.12.17"
+lazy val supportedScalaVersions = List(scala213, scala212)
+
 val ZIOVersion = "1.0.12"
 val MonixVersion = "3.4.0"
 val AerospikeVersion = "5.1.8"
@@ -6,8 +11,8 @@ val NettyVersion = "4.1.68.Final"
 
 lazy val commonSettings = Seq(
   organization := "io.github.reugn",
-  scalaVersion := "2.12.15",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.6"),
+  scalaVersion := scala212,
+  crossScalaVersions := supportedScalaVersions,
 
   libraryDependencies ++= Seq(
     "com.aerospike" % "aerospike-client" % AerospikeVersion,
