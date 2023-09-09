@@ -1,13 +1,13 @@
-val ZIOVersion = "1.0.16"
+val ZIOVersion = "2.0.16"
 val MonixVersion = "3.4.1"
-val AerospikeVersion = "6.1.0"
-val AkkaStreamVersion = "2.6.19"
-val NettyVersion = "4.1.79.Final"
+val AerospikeVersion = "7.1.0"
+val AkkaStreamVersion = "2.8.4"
+val NettyVersion = "4.1.97.Final"
 
 lazy val commonSettings = Seq(
   organization := "io.github.reugn",
-  scalaVersion := "2.12.16",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.8"),
+  scalaVersion := "2.12.18",
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.11"),
 
   libraryDependencies ++= Seq(
     "com.aerospike" % "aerospike-client" % AerospikeVersion,
@@ -17,7 +17,7 @@ lazy val commonSettings = Seq(
     "io.netty" % "netty-transport-native-kqueue" % NettyVersion classifier "osx-x86_64",
     "io.netty" % "netty-handler" % NettyVersion,
     "com.typesafe" % "config" % "1.4.2",
-    "org.scalatest" %% "scalatest" % "3.2.12" % Test
+    "org.scalatest" %% "scalatest" % "3.2.16" % Test
   ),
 
   scalacOptions := Seq(
@@ -69,7 +69,7 @@ lazy val zio = (project in file("aerospike-zio")).settings(
 ).settings(libraryDependencies ++= Seq(
   "dev.zio" %% "zio" % ZIOVersion,
   "dev.zio" %% "zio-streams" % ZIOVersion,
-  "dev.zio" %% "zio-interop-reactivestreams" % "1.3.12"
+  "dev.zio" %% "zio-interop-reactivestreams" % "2.0.2"
 )).dependsOn(
   core % "test->test;compile->compile"
 )
