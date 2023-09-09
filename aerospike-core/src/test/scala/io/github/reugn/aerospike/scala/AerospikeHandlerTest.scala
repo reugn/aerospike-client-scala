@@ -197,7 +197,6 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
     val queryStatement = QueryStatement(
       namespace,
       setName = Some(set),
-      secondaryIndexName = Some("idx1"),
       secondaryIndexFilter = Some(Filter.equal("bin1", 1))
     )
     assertThrows[AerospikeException] {

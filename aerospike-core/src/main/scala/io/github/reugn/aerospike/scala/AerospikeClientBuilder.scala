@@ -1,12 +1,13 @@
 package io.github.reugn.aerospike.scala
 
+import com.aerospike.client.metrics.MetricsPolicy
 import com.aerospike.client.policy.{AuthMode, ClientPolicy}
 import com.aerospike.client.{AerospikeClient, Host, IAerospikeClient}
 import com.typesafe.config.Config
 import io.github.reugn.aerospike.scala.AerospikeClientBuilder._
 import io.github.reugn.aerospike.scala.Policies.ClientPolicyImplicits._
 
-class AerospikeClientBuilder(config: Config) {
+class AerospikeClientBuilder(config: Config, metricsPolicy: Option[MetricsPolicy]) {
 
   private def buildClientPolicy(): ClientPolicy = {
     val policy = new ClientPolicy();
@@ -33,7 +34,7 @@ class AerospikeClientBuilder(config: Config) {
   }
 
   def build(): IAerospikeClient = {
-    Option(config.getString("aerospike.hostList")) map {
+    val client = Option(config.getString("aerospike.hostList")) map {
       hostList =>
         new AerospikeClient(buildClientPolicy(), Host.parseHosts(hostList, defaultPort): _*)
     } getOrElse {
@@ -41,6 +42,8 @@ class AerospikeClientBuilder(config: Config) {
       val port = Option(config.getInt("aerospike.port")).getOrElse(defaultPort)
       new AerospikeClient(buildClientPolicy(), hostname, port)
     }
+    metricsPolicy.foreach(policy => client.enableMetrics(policy))
+    client
   }
 }
 
@@ -48,5 +51,5 @@ object AerospikeClientBuilder {
   private[aerospike] val defaultHostName = "localhost"
   private[aerospike] val defaultPort = 3000
 
-  def apply(config: Config): AerospikeClientBuilder = new AerospikeClientBuilder(config)
+  def apply(config: Config): AerospikeClientBuilder = new AerospikeClientBuilder(config, None)
 }

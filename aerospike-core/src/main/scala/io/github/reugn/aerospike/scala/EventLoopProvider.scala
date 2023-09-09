@@ -2,8 +2,8 @@ package io.github.reugn.aerospike.scala
 
 import com.aerospike.client.async.{EventLoop, EventLoops, EventPolicy, NettyEventLoops}
 import io.github.reugn.aerospike.scala.util.{Linux, Mac, OperatingSystem}
-import io.netty.channel.epoll.EpollEventLoopGroup
-import io.netty.channel.kqueue.KQueueEventLoopGroup
+import io.netty.channel.epoll.{Epoll, EpollEventLoopGroup}
+import io.netty.channel.kqueue.{KQueue, KQueueEventLoopGroup}
 import io.netty.channel.nio.NioEventLoopGroup
 
 object EventLoopProvider {
@@ -12,9 +12,9 @@ object EventLoopProvider {
 
   private[scala] lazy val eventLoops: EventLoops = {
     val eventLoopGroup = OperatingSystem() match {
-      case Linux =>
+      case Linux if Epoll.isAvailable =>
         new EpollEventLoopGroup(nThreads)
-      case Mac =>
+      case Mac if KQueue.isAvailable =>
         new KQueueEventLoopGroup(nThreads)
       case _ =>
         new NioEventLoopGroup(nThreads)
