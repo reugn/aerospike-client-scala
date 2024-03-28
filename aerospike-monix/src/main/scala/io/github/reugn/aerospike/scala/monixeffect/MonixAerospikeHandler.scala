@@ -128,8 +128,11 @@ class MonixAerospikeHandler(protected val client: IAerospikeClient)
     Task(client.execute(policy, statement, operations: _*))
   }
 
-  override def info(node: Node, name: String): Task[String] = {
-    Task(Info.request(node, name))
+  override def info(node: Node, commands: String*)(implicit policy: InfoPolicy): Task[Map[String, String]] = {
+    Task(Info.request(policy, node, commands: _*)) map {
+      import scala.collection.JavaConverters._
+      _.asScala.toMap
+    }
   }
 
   override def query(statement: QueryStatement)

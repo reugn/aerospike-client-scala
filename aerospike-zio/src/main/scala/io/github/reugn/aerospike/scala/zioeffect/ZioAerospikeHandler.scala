@@ -128,8 +128,11 @@ class ZioAerospikeHandler(protected val client: IAerospikeClient)
     ZIO.attemptBlocking(client.execute(policy, statement, operations: _*))
   }
 
-  override def info(node: Node, name: String): Task[String] = {
-    ZIO.attemptBlocking(Info.request(node, name))
+  override def info(node: Node, commands: String*)(implicit policy: InfoPolicy): Task[Map[String, String]] = {
+    ZIO.attemptBlocking(Info.request(policy, node, commands: _*)) map {
+      import scala.collection.JavaConverters._
+      _.asScala.toMap
+    }
   }
 
   override def query(statement: QueryStatement)

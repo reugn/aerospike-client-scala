@@ -108,5 +108,6 @@ trait AsyncHandler[F[_]] {
   // Info
   //--------------------------------------------------------
 
-  def info(node: Node, name: String): F[String]
+  def info(node: Node, commands: String*)
+          (implicit policy: InfoPolicy = null): F[Map[String, String]]
 }
