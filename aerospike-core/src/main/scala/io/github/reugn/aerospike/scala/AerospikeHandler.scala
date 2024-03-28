@@ -139,8 +139,10 @@ class AerospikeHandler(protected val client: IAerospikeClient)(implicit ec: Exec
     Future(client.execute(policy, statement, operations: _*))
   }
 
-  override def info(node: Node, name: String): Future[String] = {
-    Future(Info.request(node, name))
+  override def info(node: Node, commands: String*)(implicit policy: InfoPolicy): Future[Map[String, String]] = {
+    val listener = new ScalaInfoListener
+    client.info(null, listener, policy, node, commands: _*)
+    listener.future
   }
 
   override def scanNodeName(nodeName: String, ns: String, set: String, binNames: String*)

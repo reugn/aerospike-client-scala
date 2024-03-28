@@ -4,13 +4,14 @@ import com.aerospike.client._
 import com.aerospike.client.exp.{Exp, ExpOperation, ExpReadFlags}
 import io.github.reugn.aerospike.scala.TestCommon
 import io.github.reugn.aerospike.scala.model.QueryStatement
-import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfter, OptionValues}
 import zio.Runtime.{default => rt}
 import zio.{Unsafe, ZIO}
 
-class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers with BeforeAndAfter {
+class ZioAerospikeHandlerTest extends AnyFlatSpec
+  with TestCommon with Matchers with BeforeAndAfter with OptionValues {
 
   private val client: ZioAerospikeHandler = ZioAerospikeHandler(hostname, port)
   override protected val set = "client_zio"
@@ -115,6 +116,14 @@ class ZioAerospikeHandlerTest extends AnyFlatSpec with TestCommon with Matchers 
     val t = client.operateBatchRecord(records)
     val result = unsafeRun(t)
     result shouldBe true
+  }
+
+  it should "execute info command properly" in {
+    val node = client.asJava.getCluster.getRandomNode
+    val command = "namespaces"
+    val t = client.info(node, command)
+    val result = unsafeRun(t)
+    result.get(command).value shouldBe namespace
   }
 
   it should "query all properly" in {

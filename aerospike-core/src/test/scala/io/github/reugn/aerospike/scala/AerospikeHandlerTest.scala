@@ -10,11 +10,12 @@ import com.aerospike.client.query.{Filter, KeyRecord}
 import io.github.reugn.aerospike.scala.model.QueryStatement
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfter, FutureOutcome}
+import org.scalatest.{BeforeAndAfter, FutureOutcome, OptionValues}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers with BeforeAndAfter {
+class AerospikeHandlerTest extends AsyncFlatSpec
+  with TestCommon with Matchers with BeforeAndAfter with OptionValues {
 
   private implicit val actorSystem: ActorSystem = ActorSystem("test")
   private implicit val materializer: Materializer = Materializer(actorSystem)
@@ -167,6 +168,14 @@ class AerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers w
       seq.head.getLong("intBin")
     } map {
       _ shouldBe 100L
+    }
+  }
+
+  it should "execute info command properly" in {
+    val node = client.asJava.getCluster.getRandomNode
+    val command = "namespaces"
+    client.info(node, command) map { result =>
+      result.get(command).value shouldBe namespace
     }
   }
 

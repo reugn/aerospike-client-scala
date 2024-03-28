@@ -6,14 +6,15 @@ import io.github.reugn.aerospike.scala.TestCommon
 import io.github.reugn.aerospike.scala.model.QueryStatement
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Consumer
-import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfter, OptionValues}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class MonixAerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Matchers with BeforeAndAfter {
+class MonixAerospikeHandlerTest extends AsyncFlatSpec
+  with TestCommon with Matchers with BeforeAndAfter with OptionValues {
 
   private val client: MonixAerospikeHandler = MonixAerospikeHandler(hostname, port)
   override protected val set = "client_monix"
@@ -113,6 +114,14 @@ class MonixAerospikeHandlerTest extends AsyncFlatSpec with TestCommon with Match
       Operation.put(new Bin("intBin", 100)))
     val result = Await.result(t.runToFuture, Duration.Inf)
     result.status shouldBe true
+  }
+
+  it should "execute info command properly" in {
+    val node = client.asJava.getCluster.getRandomNode
+    val command = "namespaces"
+    val t = client.info(node, command)
+    val result = Await.result(t.runToFuture, Duration.Inf)
+    result.get(command).value shouldBe namespace
   }
 
   it should "operate list of BatchRecords properly" in {
