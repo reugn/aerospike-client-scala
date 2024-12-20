@@ -105,6 +105,14 @@ class ZioAerospikeHandler(protected val client: IAerospikeClient)
     ZIO.attemptBlocking(client.operate(policy, records.asJava))
   }
 
+  override def commit(txn: Txn): Task[CommitStatus] = {
+    ZIO.attemptBlocking(client.commit(txn))
+  }
+
+  override def abort(txn: Txn): Task[AbortStatus] = {
+    ZIO.attemptBlocking(client.abort(txn))
+  }
+
   override def scanNodeName(nodeName: String, ns: String, set: String, binNames: String*)
                            (implicit policy: ScanPolicy): Task[List[KeyRecord]] = {
     ZIO.attemptBlocking {
