@@ -88,6 +88,14 @@ trait AsyncHandler[F[_]] {
                         (implicit policy: BatchPolicy = null): F[Boolean]
 
   //-------------------------------------------------------
+  // Multi-Record Transactions
+  //-------------------------------------------------------
+
+  def commit(txn: Txn): F[CommitStatus]
+
+  def abort(txn: Txn): F[AbortStatus]
+
+  //-------------------------------------------------------
   // Scan Operations
   //-------------------------------------------------------
 

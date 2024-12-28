@@ -134,6 +134,18 @@ class AerospikeHandler(protected val client: IAerospikeClient)(implicit ec: Exec
     listener.future
   }
 
+  override def commit(txn: Txn): Future[CommitStatus] = {
+    val listener = new ScalaCommitListener
+    client.commit(null, listener, txn)
+    listener.future
+  }
+
+  override def abort(txn: Txn): Future[AbortStatus] = {
+    val listener = new ScalaAbortListener
+    client.abort(null, listener, txn)
+    listener.future
+  }
+
   override def execute(statement: Statement, operations: Operation*)
                       (implicit policy: WritePolicy): Future[ExecuteTask] = {
     Future(client.execute(policy, statement, operations: _*))

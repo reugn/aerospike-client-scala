@@ -105,6 +105,14 @@ class MonixAerospikeHandler(protected val client: IAerospikeClient)
     Task(client.operate(policy, records.asJava))
   }
 
+  override def commit(txn: Txn): Task[CommitStatus] = {
+    Task(client.commit(txn))
+  }
+
+  override def abort(txn: Txn): Task[AbortStatus] = {
+    Task(client.abort(txn))
+  }
+
   override def scanNodeName(nodeName: String, ns: String, set: String, binNames: String*)
                            (implicit policy: ScanPolicy): Task[List[KeyRecord]] = {
     Task {
